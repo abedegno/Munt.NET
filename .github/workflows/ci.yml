@@ -8,6 +8,7 @@ on:
 env:
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  MUNT_DIR: munt-src
 
 jobs:
   build-and-test:
@@ -37,11 +38,11 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Clone munt
-        run: git clone --depth 1 https://github.com/munt/munt.git /tmp/munt
+        run: git clone --depth 1 https://github.com/munt/munt.git ${{ env.MUNT_DIR }}
 
       - name: Build mt32emu native library
         run: |
-          cd /tmp/munt/mt32emu
+          cd ${{ env.MUNT_DIR }}/mt32emu
           cmake -B build -DCMAKE_BUILD_TYPE=Release -Dlibmt32emu_SHARED=ON
           cmake --build build --config Release
 
@@ -49,14 +50,16 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           mkdir -p src/Munt.NET/runtimes/${{ matrix.rid }}/native
-          find /tmp/munt/mt32emu/build -name "${{ matrix.cmake_lib }}" -exec cp {} src/Munt.NET/runtimes/${{ matrix.rid }}/native/${{ matrix.native_lib }} \;
+          find ${{ env.MUNT_DIR }}/mt32emu/build -name "${{ matrix.cmake_lib }}" -exec cp {} src/Munt.NET/runtimes/${{ matrix.rid }}/native/${{ matrix.native_lib }} \;
 
       - name: Copy native library (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "src/Munt.NET/runtimes/${{ matrix.rid }}/native"
-          $lib = Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.cmake_lib }}" | Select-Object -First 1
+          $lib = Get-ChildItem -Path "${{ env.MUNT_DIR }}/mt32emu/build" -Recurse -Filter "${{ matrix.cmake_lib }}" | Select-Object -First 1
+          if ($null -eq $lib) { Write-Error "Native library ${{ matrix.cmake_lib }} not found"; exit 1 }
+          Write-Host "Found: $($lib.FullName)"
           Copy-Item $lib.FullName -Destination "src/Munt.NET/runtimes/${{ matrix.rid }}/native/${{ matrix.native_lib }}"
 
       - name: Build

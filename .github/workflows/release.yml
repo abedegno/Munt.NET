@@ -27,11 +27,11 @@ jobs:
 
     steps:
       - name: Clone munt
-        run: git clone --depth 1 https://github.com/munt/munt.git /tmp/munt
+        run: git clone --depth 1 https://github.com/munt/munt.git munt-src
 
       - name: Build mt32emu native library
         run: |
-          cd /tmp/munt/mt32emu
+          cd munt-src/mt32emu
           cmake -B build -DCMAKE_BUILD_TYPE=Release -Dlibmt32emu_SHARED=ON
           cmake --build build --config Release
 
@@ -40,13 +40,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.rid }}
-          path: /tmp/munt/mt32emu/build/**/${{ matrix.lib_name }}
+          path: munt-src/mt32emu/build/**/${{ matrix.lib_name }}
 
       - name: Find and upload native library (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $lib = Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.lib_name }}" | Select-Object -First 1
+          $lib = Get-ChildItem -Path "munt-src/mt32emu/build" -Recurse -Filter "${{ matrix.lib_name }}" | Select-Object -First 1
           echo "Found: $($lib.FullName)"
           New-Item -ItemType Directory -Force -Path "staging"
           Copy-Item $lib.FullName -Destination "staging/"
