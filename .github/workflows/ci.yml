@@ -16,13 +16,16 @@ jobs:
         include:
           - os: ubuntu-latest
             rid: linux-x64
-            lib_name: libmt32emu.so
+            cmake_lib: libmt32emu.so
+            native_lib: libmt32emu.so
           - os: windows-latest
             rid: win-x64
-            lib_name: mt32emu.dll
+            cmake_lib: mt32emu.dll
+            native_lib: libmt32emu.dll
           - os: macos-latest
             rid: osx-arm64
-            lib_name: libmt32emu.dylib
+            cmake_lib: libmt32emu.dylib
+            native_lib: libmt32emu.dylib
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -46,17 +49,18 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           mkdir -p src/Munt.NET/runtimes/${{ matrix.rid }}/native
-          find /tmp/munt/mt32emu/build -name "${{ matrix.lib_name }}" -exec cp {} src/Munt.NET/runtimes/${{ matrix.rid }}/native/ \;
+          find /tmp/munt/mt32emu/build -name "${{ matrix.cmake_lib }}" -exec cp {} src/Munt.NET/runtimes/${{ matrix.rid }}/native/${{ matrix.native_lib }} \;
 
       - name: Copy native library (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "src/Munt.NET/runtimes/${{ matrix.rid }}/native"
-          Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.lib_name }}" | Copy-Item -Destination "src/Munt.NET/runtimes/${{ matrix.rid }}/native/"
+          $lib = Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.cmake_lib }}" | Select-Object -First 1
+          Copy-Item $lib.FullName -Destination "src/Munt.NET/runtimes/${{ matrix.rid }}/native/${{ matrix.native_lib }}"
 
       - name: Build
         run: dotnet build Munt.NET.sln --configuration Release
 
       - name: Test
-        run: dotnet test Munt.NET.sln --configuration Release --no-build
+        run: dotnet test Munt.NET.sln --configuration Release
