@@ -1,6 +1,11 @@
 # Munt.NET
 
+[![NuGet](https://img.shields.io/nuget/v/Munt.NET.svg)](https://www.nuget.org/packages/Munt.NET)
+[![CI](https://github.com/abedegno/Munt.NET/actions/workflows/ci.yml/badge.svg)](https://github.com/abedegno/Munt.NET/actions/workflows/ci.yml)
+
 A .NET wrapper for the [Munt](https://github.com/munt/munt) mt32emu library, providing Roland CM-32L/MT-32 emulation.
+
+The NuGet package includes pre-built native mt32emu libraries for Windows (x64), Linux (x64), and macOS (ARM64) — no need to build mt32emu yourself.
 
 ## Installation
 
@@ -51,7 +56,17 @@ You must source them separately. Both standard names and MAME-style names are su
 - `CM32L_CONTROL.ROM` / `cm32l_ctrl_1_02.rom` / `cm32l_ctrl_1_00.rom`
 - `CM32L_PCM.ROM` / `cm32l_pcm.rom`
 
+## Platform Support
+
+| Platform | Runtime ID | Included in NuGet |
+|----------|-----------|-------------------|
+| Windows x64 | win-x64 | Yes |
+| Linux x64 | linux-x64 | Yes |
+| macOS ARM64 | osx-arm64 | Yes |
+
 ## Building from Source
+
+Only needed if you're contributing or need a platform not listed above.
 
 ```bash
 # Clone
@@ -59,14 +74,19 @@ git clone https://github.com/abedegno/Munt.NET.git
 cd Munt.NET
 
 # Build the mt32emu native library (requires cmake)
-git clone --depth 1 https://github.com/munt/munt.git /tmp/munt
-cd /tmp/munt/mt32emu
+git clone --depth 1 https://github.com/munt/munt.git munt-src
+cd munt-src/mt32emu
 cmake -B build -DCMAKE_BUILD_TYPE=Release -Dlibmt32emu_SHARED=ON
 cmake --build build --config Release
 
 # Copy native lib to runtimes (macOS example)
-mkdir -p /path/to/Munt.NET/src/Munt.NET/runtimes/osx-arm64/native
-cp build/libmt32emu.dylib /path/to/Munt.NET/src/Munt.NET/runtimes/osx-arm64/native/
+mkdir -p ../../src/Munt.NET/runtimes/osx-arm64/native
+cp build/libmt32emu.dylib ../../src/Munt.NET/runtimes/osx-arm64/native/
+cd ../..
+
+# On macOS you can also install via Homebrew
+# brew install mt32emu
+# cp /opt/homebrew/lib/libmt32emu.dylib src/Munt.NET/runtimes/osx-arm64/native/
 
 # Build and test
 dotnet build Munt.NET.sln
