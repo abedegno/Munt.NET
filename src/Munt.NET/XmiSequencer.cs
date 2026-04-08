@@ -6,7 +6,7 @@ namespace Munt.NET;
 
 public static class XmiSequencer
 {
-    private struct MidiEvent : IComparable<MidiEvent>
+    internal struct MidiEvent : IComparable<MidiEvent>
     {
         public uint Tick;
         public byte[] Data; // short msg: 1-3 bytes; sysex: full F0..F7
@@ -23,7 +23,7 @@ public static class XmiSequencer
         return RenderEvents(synth, events, sampleRate);
     }
 
-    static List<MidiEvent> ParseXmi(byte[] data)
+    internal static List<MidiEvent> ParseXmi(byte[] data)
     {
         // Find the EVNT chunk inside FORM:XMID
         int evntOffset = FindEvntChunk(data);
@@ -181,7 +181,7 @@ public static class XmiSequencer
         return result;
     }
 
-    static int FindEvntChunk(byte[] data)
+    internal static int FindEvntChunk(byte[] data)
     {
         // Walk IFF chunks looking for "EVNT"
         int pos = 0;
@@ -212,12 +212,12 @@ public static class XmiSequencer
         return -1;
     }
 
-    static int ReadBE32(byte[] data, int offset)
+    internal static int ReadBE32(byte[] data, int offset)
     {
         return (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
     }
 
-    static int ReadVarLen(byte[] data, ref int pos)
+    internal static int ReadVarLen(byte[] data, ref int pos)
     {
         int value = 0;
         while (pos < data.Length)
@@ -229,7 +229,7 @@ public static class XmiSequencer
         return value;
     }
 
-    static int MidiMsgDataLength(byte status)
+    internal static int MidiMsgDataLength(byte status)
     {
         switch (status & 0xF0)
         {
