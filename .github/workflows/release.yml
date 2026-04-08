@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags: ["*.*.*"]
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-native:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            lib_name: libmt32emu.so
+          - os: windows-latest
+            rid: win-x64
+            lib_name: mt32emu.dll
+          - os: macos-latest
+            rid: osx-arm64
+            lib_name: libmt32emu.dylib
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Clone munt
+        run: git clone --depth 1 https://github.com/munt/munt.git /tmp/munt
+
+      - name: Build mt32emu native library
+        run: |
+          cd /tmp/munt/mt32emu
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -Dlibmt32emu_SHARED=ON
+          cmake --build build --config Release
+
+      - name: Find and upload native library (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: /tmp/munt/mt32emu/build/**/${{ matrix.lib_name }}
+
+      - name: Find and upload native library (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $lib = Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.lib_name }}" | Select-Object -First 1
+          echo "Found: $($lib.FullName)"
+          New-Item -ItemType Directory -Force -Path "staging"
+          Copy-Item $lib.FullName -Destination "staging/"
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: staging/${{ matrix.lib_name }}
+
+  pack-and-publish:
+    needs: build-native
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Download native libraries
+        uses: actions/download-artifact@v4
+        with:
+          path: native-libs
+
+      - name: Place native libraries
+        run: |
+          mkdir -p src/Munt.NET/runtimes/linux-x64/native
+          mkdir -p src/Munt.NET/runtimes/win-x64/native
+          mkdir -p src/Munt.NET/runtimes/osx-arm64/native
+          find native-libs/native-linux-x64 -name "libmt32emu.so" -exec cp {} src/Munt.NET/runtimes/linux-x64/native/ \;
+          find native-libs/native-win-x64 -name "mt32emu.dll" -exec cp {} src/Munt.NET/runtimes/win-x64/native/ \;
+          find native-libs/native-osx-arm64 -name "libmt32emu.dylib" -exec cp {} src/Munt.NET/runtimes/osx-arm64/native/ \;
+
+      - name: Build
+        run: dotnet build src/Munt.NET/Munt.NET.csproj --configuration Release
+
+      - name: Push to NuGet
+        run: dotnet nuget push ./**/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
