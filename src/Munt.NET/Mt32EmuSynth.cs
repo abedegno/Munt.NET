@@ -1,6 +1,6 @@
 using System;
 
-namespace Mt32Emu.NET;
+namespace Munt.NET;
 
 public sealed class Mt32EmuSynth : IDisposable
 {

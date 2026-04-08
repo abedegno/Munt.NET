@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Mt32Emu.NET;
+namespace Munt.NET;
 
 internal static class Mt32EmuImports
 {

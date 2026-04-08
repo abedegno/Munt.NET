@@ -1,4 +1,4 @@
-namespace Mt32Emu.NET;
+namespace Munt.NET;
 
 public enum Mt32EmuReturnCode
 {

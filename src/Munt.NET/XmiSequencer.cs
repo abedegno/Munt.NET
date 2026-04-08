@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Mt32Emu.NET;
+namespace Munt.NET;
 
 public static class XmiSequencer
 {
