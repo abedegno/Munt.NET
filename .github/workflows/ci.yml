@@ -21,7 +21,7 @@ jobs:
             native_lib: libmt32emu.so
           - os: windows-latest
             rid: win-x64
-            cmake_lib: mt32emu.dll
+            cmake_lib: mt32emu-2.dll
             native_lib: libmt32emu.dll
           - os: macos-latest
             rid: osx-arm64
