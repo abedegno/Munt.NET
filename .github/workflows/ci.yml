@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            lib_name: libmt32emu.so
+          - os: windows-latest
+            rid: win-x64
+            lib_name: mt32emu.dll
+          - os: macos-latest
+            rid: osx-arm64
+            lib_name: libmt32emu.dylib
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Clone munt
+        run: git clone --depth 1 https://github.com/munt/munt.git /tmp/munt
+
+      - name: Build mt32emu native library
+        run: |
+          cd /tmp/munt/mt32emu
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -Dlibmt32emu_SHARED=ON
+          cmake --build build --config Release
+
+      - name: Copy native library (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p src/Munt.NET/runtimes/${{ matrix.rid }}/native
+          find /tmp/munt/mt32emu/build -name "${{ matrix.lib_name }}" -exec cp {} src/Munt.NET/runtimes/${{ matrix.rid }}/native/ \;
+
+      - name: Copy native library (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "src/Munt.NET/runtimes/${{ matrix.rid }}/native"
+          Get-ChildItem -Path "/tmp/munt/mt32emu/build" -Recurse -Filter "${{ matrix.lib_name }}" | Copy-Item -Destination "src/Munt.NET/runtimes/${{ matrix.rid }}/native/"
+
+      - name: Build
+        run: dotnet build Munt.NET.sln --configuration Release
+
+      - name: Test
+        run: dotnet test Munt.NET.sln --configuration Release --no-build
