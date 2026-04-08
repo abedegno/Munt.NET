@@ -21,4 +21,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Munt.NET\Munt.NET.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Munt.NET\runtimes\osx-arm64\native\libmt32emu.dylib"
+          CopyToOutputDirectory="PreserveNewest"
+          Link="libmt32emu.dylib"
+          Visible="false" />
+  </ItemGroup>
 </Project>
