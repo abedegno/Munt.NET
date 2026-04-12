@@ -5,6 +5,10 @@ namespace Munt.NET;
 
 /// <summary>
 /// ISynthEngine backed by mt32emu (Munt). Authentic CM-32L / MT-32 emulation.
+/// Note: consumers on .NET Core 3.0+ should register a DllImportResolver on
+/// typeof(Mt32EmuSynth).Assembly before constructing this engine, to resolve
+/// the libmt32emu native library. netstandard2.0 doesn't expose NativeLibrary
+/// so we can't do that setup here.
 /// </summary>
 public sealed class Mt32EmuEngine : ISynthEngine
 {
