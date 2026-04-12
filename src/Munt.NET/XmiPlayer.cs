@@ -32,6 +32,9 @@ public sealed class XmiPlayer : IDisposable
     public void Load(byte[] xmiData)
     {
         CheckDisposed();
+        // Reset synth state so any notes still ringing from a previous track
+        // don't carry over into the new one.
+        _synth.Reset();
         _events = XmiSequencer.ParseXmi(xmiData);
         _nextEventIdx = 0;
         _currentTick = 0;
